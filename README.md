@@ -1,70 +1,212 @@
-# Getting Started with Create React App
+# 🌍 EnviroScan: Air Quality Monitoring System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+An IoT-enabled smart air quality monitoring solution using ESP8266, real-time sensor data, AI decision-making, and a React-based dashboard.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 📌 Table of Contents
+1. [Project Aims](#project-aims)
+2. [Block Diagram](#block-diagram)
+3. [MQTT Topics & Broker Details](#mqtt-topics--broker-details)
+4. [Cloud AI Model](#cloud-ai-model)
+5. [Execution Instructions](#execution-instructions)
+6. [Web Dashboard User Guide](#web-dashboard-user-guide)
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 1️⃣ Project Aims
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The primary goal of **EnviroScan** is to design and implement an IoT-based air quality monitoring system that:
 
-### `npm test`
+- Collects data from temperature, humidity, PM2.5, and CO2 sensors via an ESP8266 board.
+- Transmits sensor data to the cloud using MQTT over WiFi.
+- Uses a pretrained AI model to detect dangerous levels and anomalies.
+- Automatically triggers actuators like fans or purifiers.
+- Offers a user-friendly dashboard for real-time monitoring and manual override.
+- Maintains modular, cost-effective architecture for easy deployment in homes or small industries.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 2️⃣ Block Diagram
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+\[Insert Block Diagram Image Here: e.g., images/block\_diagram.png]
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+````
 
-### `npm run eject`
+> 📌 **Figure 1**: Architecture of the EnviroScan Sensor Board.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+---
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 3️⃣ MQTT Topics & Broker Details
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### 🔐 Broker Configuration
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- **Broker URL**: `4547d51320d54e74be02bb04e3c1b342.s1.eu.hivemq.cloud`
+- **Port**: `8883 (TLS)`
+- **Cluster ID**: `4547d51320d54e74be02bb04e3c1b342`
+- **Plan**: Serverless
+- **Current Usage**: 5/100 sessions, 74.03 KB/10 GB
 
-## Learn More
+### 👤 User Credentials
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+#### `envscan` (ESP8266 Sensor Board)
+- **Username**: `envscan`
+- **Password**: `Abcd1234`
+- **Role**: Publish sensor data, subscribe to actuator commands.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```text
+Publish: enviroscan/temp, enviroscan/humidity, enviroscan/pm25, enviroscan/co2  
+Subscribe: enviroscan/fan
+````
 
-### Code Splitting
+#### `ai user` (AI Script)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+* **Role**: Analyze sensor data and publish predictions.
+* **Permissions**:
 
-### Analyzing the Bundle Size
+```text
+Subscribe: enviroscan/temp, enviroscan/humidity, enviroscan/pm25, enviroscan/co2  
+Publish: enviroscan/fan, enviroscan/accuracy
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+#### `web user` (Web Dashboard)
 
-### Making a Progressive Web App
+* **Role**: Monitor data and manually control fan.
+* **Permissions**:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```text
+Subscribe: enviroscan/temp, enviroscan/humidity, enviroscan/pm25, enviroscan/co2, enviroscan/fan, enviroscan/accuracy  
+Publish: enviroscan/fan (manual override)
+```
 
-### Advanced Configuration
+### 📡 MQTT Topics Overview
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+| Topic                 | Description                    |
+| --------------------- | ------------------------------ |
+| `enviroscan/temp`     | Temperature (°C) from DHT22    |
+| `enviroscan/humidity` | Humidity (%) from DHT22        |
+| `enviroscan/pm25`     | PM2.5 (μg/m³) from dust sensor |
+| `enviroscan/co2`      | CO2 level (ppm) from MQ135     |
+| `enviroscan/fan`      | Fan control (ON/OFF)           |
+| `enviroscan/accuracy` | AI model accuracy              |
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 4️⃣ Cloud AI Model
 
-### `npm run build` fails to minify
+### 🧠 Model Info
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+* **Type**: Decision Tree Classifier (scikit-learn)
+* **Features**: Temperature, Humidity, PM2.5, CO2
+* **Output**: Fan ON if PM2.5 > 100 or CO2 > 700, else OFF
+
+### 🧪 Training Data Summary
+
+| Feature     | Distribution                      |
+| ----------- | --------------------------------- |
+| Temperature | Normal (mean 25°C, std 5°C)       |
+| Humidity    | Normal (mean 50%, std 10%)        |
+| PM2.5       | Exponential (mean 50 μg/m³)       |
+| CO2         | Normal (mean 60 ppm, std 200 ppm) |
+
+* **Preprocessing**: Mean Imputation + StandardScaler
+* **Accuracy**: `98%`, Precision/Recall > `0.97`
+
+### ⚙️ Deployment
+
+* **Platform**: Windows 10 + Miniconda
+* **Script**: `decision_tree_model.py`
+* **Broker**: HiveMQ Cloud (same as above)
+* **Interval**: Every 10s
+
+---
+
+## 5️⃣ Execution Instructions
+
+### Install Required Libraries:
+
+```bash
+pip install paho-mqtt scikit-learn numpy
+```
+
+### Run AI Model Script:
+
+```bash
+python decision_tree_model.py
+# or full path if needed:
+C:\Users\usman\IoT-Project\decision_tree_model.py
+```
+
+---
+
+## 6️⃣ Web Dashboard User Guide
+
+### 🖥️ Features
+
+* Real-time sensor display
+* AI-based fan control
+* Manual override button
+* Responsive UI (Tailwind CSS)
+
+### 🚀 Setup Instructions
+
+1. Ensure Node.js (v16+) is installed.
+2. Navigate to the project:
+
+```bash
+cd C:\Users\usman\IoT-Project\enviroscan-web
+```
+
+3. Install dependencies:
+
+```bash
+npm install
+```
+
+4. Start the web app:
+
+```bash
+npm start
+```
+
+5. Open in browser:
+
+```
+http://localhost:3000
+```
+
+### 📡 Web App MQTT Config
+
+| Parameter         | Value                                                 |
+| ----------------- | ----------------------------------------------------- |
+| Broker            | `4547d51320d54e74be02bb04e3c1b342.s1.eu.hivemq.cloud` |
+| Port              | `8883`                                                |
+| Username          | `web user`                                            |
+| Password          | \[Set in HiveMQ]                                      |
+| Subscribed Topics | temp, humidity, pm25, co2, fan, accuracy              |
+| Published Topic   | `enviroscan/fan` (manual override)                    |
+
+---
+
+### 🧩 Usage
+
+* Monitor temperature, humidity, PM2.5, and CO2 in real-time.
+* Check fan status and AI prediction accuracy.
+* Toggle fan manually with the ON/OFF button.
+
+---
+
+### ❗ Troubleshooting
+
+* **No Data?** Check MQTT credentials in `App.js`
+* **Stuck Connections?** Review HiveMQ Cloud session limit (5/100)
+* **AI/ESP Not Working?** Ensure both are running and connected to MQTT.
+
+---
+
+## 👤 Authors
+
+* Hafiz Mannan Siddiqui ([@HafizMannanSiddiqui](https://github.com/HafizMannanSiddiqui))
+* Usman Amjad
